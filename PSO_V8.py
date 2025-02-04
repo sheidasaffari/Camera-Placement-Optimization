@@ -52,9 +52,9 @@ num_cameras = 4
 
 
 # Cost Function Coefficients
-W1 = 0.4   # Coefficient of Coevarge
-W2 = 0.2 # Coefficient of Resolution (Scale)
-W3 = 0.4  # Coefficient of Viewpoints Variety
+W1 = 1   # Coefficient of Coevarge
+W2 = 0   # Coefficient of Resolution (Scale)
+W3 = 0   # Coefficient of Viewpoints Variety
 
 
 # Function to check if a point is within the room but outside the box
@@ -125,6 +125,7 @@ def calculate_fov_pyramid_old(camera_pos, h_fov, v_fov, max_depth, pitch, yaw):
     
     return rotated_corners
 
+
 def calculate_fov_pyramid(camera_pos, h_fov, v_fov, max_depth, pitch, yaw, roll):
     half_h_fov = math.radians(h_fov / 2)
     half_v_fov = math.radians(v_fov / 2)
@@ -168,6 +169,7 @@ def calculate_fov_pyramid(camera_pos, h_fov, v_fov, max_depth, pitch, yaw, roll)
         rotated_corners.append(rotated_corner.tolist())
     
     return rotated_corners
+
 
 def voxel_positions(boxox_size, vel_size):
     # Generate voxel positions within the box
@@ -256,6 +258,7 @@ def Is_inside_pyramid(voxel, camera_pos, h_fov, v_fov, max_depth, pitch, yaw, ro
 
     return inside
 
+
 def camera_voxel_matrix(camera_poses, pitches, yaws, rolls, points):
     camera_voxel_matrix = np.zeros((len(camera_poses), len(points)))
     # print('camera_voxel_matrix:',camera_voxel_matrix)
@@ -323,6 +326,7 @@ def flatten_camera_params(camera_poses, pitches, yaws):
         flat_params[i*5:i*5+3] = camera_poses[i]
         flat_params[i*5+3] = pitches[i]
         flat_params[i*5+4] = yaws[i]
+  
 
     return flat_params
 
@@ -409,9 +413,10 @@ def pso_fitness_function(particles):
     """
     # Initialize an array to store the fitness score for each particle
     fitness_scores = np.zeros(particles.shape[0])
-    penalty = 0
+    
 
     for i, flat_params in enumerate(particles):
+        penalty = 0
         num_cameras = len(flat_params) // num_params_per_camera  # Each camera has 5 parameters
         camera_poses = flat_params.reshape((num_cameras, num_params_per_camera))[:, :3]  # Extract 3D positions
         pitches = flat_params.reshape((num_cameras, num_params_per_camera))[:, 3]  # Extract pitch angles
@@ -441,12 +446,14 @@ def pso_fitness_function(particles):
 
         # Combine objectives into a single fitness score for this particle
         normalized_fitness_score =  W1 * normalized_num_voxels_covered + W2 * normalized_distance_differences +  W3 * normalized_angles
-        normalized_fitness_score = normalized_num_voxels_covered
+        # normalized_fitness_score = normalized_num_voxels_covered
 
         # Store the negative of the score since PSO minimizes the function
-        fitness_scores[i] = -normalized_fitness_score
+        fitness_scores[i] = -(normalized_fitness_score + penalty)
+        # fitness_score[i] = -(normalized_fitness_score + penalty)
 
     return fitness_scores + penalty
+
 
 def is_inside_box(camera_position, box_position, box_size):
     """Check if the camera position is inside the box."""
@@ -521,7 +528,7 @@ param_bounds = [
     (0, room_size['height']),  # z bound
     (-180, 180),  # pitch bound
     (-180,180),  # yaw bound
-    (-180,180)  # roll bound
+    (-1, 1)  # roll bound
 ]
 
 # ####################################################
@@ -538,9 +545,6 @@ maxiter = 500
 num_particles = 50
 iteration = 10
 np.random.seed(220)
-
-# Define camera-related parameters (adjust as needed)
-
 
 # Compute dimensions based on the number of cameras
 dimensions = 6 * num_cameras
@@ -602,85 +606,12 @@ num_voxels_covered = np.sum(sum_columns)
 print('Total Number of Voxels Covered:', num_voxels_covered)
 
 
-#########################################################
-#####Sensitivity Analysis of PSO Hyperparameters#########
-#########################################################
-# To run this part of the code, above lines where we are doing
-# the optimization and calculating teh cost and best pose should be commented
-# For the purpose of computational resources, we used only 5 values in teh space, 
-# then we will limit this bound and find more optimum hyperparameetrs
+#####################################################################
+##Sensitivity Analysis of PSO Hyperparameters could be added here####
+#####################################################################
 
-# iteration = 10
-# # Set the seed for reproducibility
-# np.random.seed(220)
-
-# # Define the parameter grid
-# w_values = np.linspace(0.01, 0.8, num = 5)
-# c1_values = np.linspace(1, 3, num= 5)
-# c2_values = np.linspace(1, 3, num= 5)
-
-# results  = []
-
-
-
-# for c1 in c1_values:
-#     for c2 in c2_values:
-#         for w in w_values:
-#             # Update the options with the current set of parameters
-#             options = {'c1': c1, 'c2': c2, 'w': w}
-
-#             # Initialize the optimizer with the current set of parameters
-#             optimizer = ps.single.GlobalBestPSO(n_particles=num_particles,
-#                                                 dimensions=dimensions,
-#                                                 options=options,
-#                                                 bounds=(min_bounds, max_bounds),
-#                                                 init_pos=init_pos)
-            
-#             # Perform optimization
-#             cost, pos = optimizer.optimize(pso_fitness_function, iters=iteration)
-            
-#             # Store the results along with the corresponding parameters
-#             results.append((cost, c1, c2, w))
-
-
-# # Convert results to a DataFrame for easier analysis
-# df_results = pd.DataFrame(results, columns=['best_cost', 'c1', 'c2', 'w'])
-
-
-# # Example: Print the top 5 parameter combinations with the lowest cost
-# print(df_results.sort_values(by='best_cost').head())
-
-# # You could also create plots to visualize the sensitivity
-# # For instance, plotting the best cost for different values of w
-# plt.figure(figsize=(10, 6))
-# for c1 in c1_values:
-#     for c2 in c2_values:
-#         subset = df_results[(df_results['c1'] == c1) & (df_results['c2'] == c2)]
-#         plt.plot(subset['w'], subset['best_cost'], marker='o', label=f'c1={c1}, c2={c2}')
-
-# plt.xlabel('Inertia Weight (w)')
-# plt.ylabel('Best Cost')
-# plt.title('PSO Parameter Sensitivity: Best Cost vs. Inertia Weight (w)')
-# plt.legend()
-# plt.show()
-
-
-
-# # Find the set of parameters that resulted in the minimum cost
-# best_result = min(results, key=lambda x: x[0])
-
-# print(f"Best cost: {best_result[0]}")
-# print(f"Optimal c1: {best_result[1]}")
-# print(f"Optimal c2: {best_result[2]}")
-# print(f"Optimal w: {best_result[3]}")
-
-
-######################END################################
-#####Sensitivity Analysis of PSO Hyperparameters#########
-#########################################################
 
 ##Save optimization results
-
 
 def save_optimization_results(file_path, voxel_size, num_cameras, W1, W2, W3, iteration, num_particles, options, optimal_camera_poses, total_voxels, camera_coverage_counts, coverage_percentages, num_voxels_covered):
     # Format current datetime for the filename

@@ -1,0 +1,43 @@
+Parameter,Value
+Date and Time,2025-02-04 11:33:11
+Voxel Size,0.2
+Number of Cameras,4
+W1,1
+W2,1
+W3,1
+Iteration,20
+Number of Particles,50
+c1,0.8
+c2,1.2
+w,0.3075
+Camera 1 Best Pose,"[ 1.71596192e+00  4.46633060e+00  1.75866911e+00 -2.05553654e+01
+ -1.49270174e+01 -6.43895832e-03]"
+Camera 1 Coverage Count,421.0
+Camera 1 Coverage Percentage,30.774853801169588
+Camera 2 Best Pose,"[  0.63223406   2.72136777   2.09759304 -28.39190945 -30.95221654
+   0.15954214]"
+Camera 2 Coverage Count,625.0
+Camera 2 Coverage Percentage,45.687134502923975
+Camera 3 Best Pose,[ 3.81030401  3.5777359   2.48471543 -7.5362755  37.29375346  0.17444843]
+Camera 3 Coverage Count,884.0
+Camera 3 Coverage Percentage,64.61988304093568
+Camera 4 Best Pose,"[ 5.07319219e+00  5.00537323e+00  1.64307611e+00 -3.88111731e+01
+  3.99963125e+01  4.77193238e-03]"
+Camera 4 Coverage Count,872.0
+Camera 4 Coverage Percentage,63.74269005847953
+Total Voxels Covered,1368.0
+Total Voxels,1368
+Average Pairwise Distance Difference,1.0072272859995746
+Average Pairwise Angle (deg),58.44135691507032
+Full Pairwise Distance Differences,"[[1.3  1.37 1.43 ... 1.49 1.5  1.52]
+ [0.6  0.58 0.56 ... 0.55 0.63 0.72]
+ [2.04 2.07 2.1  ... 1.34 1.4  1.47]
+ [1.9  1.95 1.99 ... 2.03 2.14 2.24]
+ [3.34 3.43 3.53 ... 2.82 2.91 2.99]
+ [1.44 1.49 1.54 ... 0.79 0.77 0.75]]"
+Full Pairwise Angles (deg),"[[ 28.49  28.58  28.5  ...  23.11  23.42  23.73]
+ [ 31.13  31.88  32.6  ...  51.4   53.94  56.52]
+ [ 32.08  32.25  32.4  ...  90.66  97.84 106.01]
+ [ 45.06  46.34  47.63 ...  46.95  47.71  48.27]
+ [ 54.96  55.41  55.73 ... 100.48 107.26 115.14]
+ [ 16.42  16.09  15.71 ...  58.04  64.4   72.11]]"

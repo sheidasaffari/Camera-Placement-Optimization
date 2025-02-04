@@ -544,7 +544,7 @@ print('Using device:', device)
 maxiter = 500
 num_particles = 50
 iteration = 10
-np.random.seed(220)
+np.random.seed(2)
 
 # Compute dimensions based on the number of cameras
 dimensions = 6 * num_cameras
@@ -564,7 +564,7 @@ init_pos = np.random.uniform(low=min_bounds_array, high=max_bounds_array, size=(
 init_pos_tensor = torch.tensor(init_pos, dtype=torch.float32, device=device)
 
 # PSO options
-options = {'c1': 1.2, 'c2': 0.7, 'w': 0.5075}
+options = {'c1': 0.8, 'c2': 1.2, 'w': 0.30}
 
 # Initialize the optimizer
 optimizer = ps.single.GlobalBestPSO(n_particles=num_particles,

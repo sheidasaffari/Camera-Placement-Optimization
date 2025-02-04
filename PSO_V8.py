@@ -564,7 +564,7 @@ init_pos = np.random.uniform(low=min_bounds_array, high=max_bounds_array, size=(
 init_pos_tensor = torch.tensor(init_pos, dtype=torch.float32, device=device)
 
 # PSO options
-options = {'c1': 1.2, 'c2': 0.7, 'w': 0.3075}
+options = {'c1': 1.2, 'c2': 0.7, 'w': 0.5075}
 
 # Initialize the optimizer
 optimizer = ps.single.GlobalBestPSO(n_particles=num_particles,
@@ -606,17 +606,25 @@ num_voxels_covered = np.sum(sum_columns)
 print('Total Number of Voxels Covered:', num_voxels_covered)
 
 
+# Compute pairwise distance differences and angles using the optimized camera poses
+distance_diffs = camera_distance_differences(camera_poses, voxel_coord)
+angles = camera_angles(camera_poses, voxel_coord)
+
+# Compute summary statistics such as the mean values
+avg_distance_diff = np.mean(distance_diffs)
+avg_angle = np.mean(angles)
+
 #####################################################################
 ##Sensitivity Analysis of PSO Hyperparameters could be added here####
 #####################################################################
 
 
 ##Save optimization results
-
-def save_optimization_results(file_path, voxel_size, num_cameras, W1, W2, W3, iteration, num_particles, options, optimal_camera_poses, total_voxels, camera_coverage_counts, coverage_percentages, num_voxels_covered):
+def save_optimization_results(file_path, voxel_size, num_cameras, W1, W2, W3, iteration, num_particles,
+                              options, optimal_camera_poses, total_voxels, camera_coverage_counts, 
+                              coverage_percentages, num_voxels_covered, avg_distance_diff, avg_angle):
     # Format current datetime for the filename
     current_datetime_for_filename = datetime.now().strftime('%d%b_%H-%M')
-    # Adjust file_path to include dynamically generated datetime
     file_path = f"{file_path.rstrip('/')}/optimization_results_{current_datetime_for_filename}.csv"
     
     # Current datetime for inclusion in the CSV
@@ -649,13 +657,22 @@ def save_optimization_results(file_path, voxel_size, num_cameras, W1, W2, W3, it
     rows.append(['Total Voxels Covered', num_voxels_covered])
     rows.append(['Total Voxels', total_voxels])
 
+    # Append summary statistics for pairwise metrics
+    rows.append(['Average Pairwise Distance Differences', avg_distance_diff])
+    rows.append(['Average Pairwise Angle (deg)', avg_angle])
+
+    # Optionally, to save the full matrices as strings (if not too large)
+    rows.append(['Full Pairwise Distance Differences', np.array2string(distance_diffs, precision=2)])
+    rows.append(['Full Pairwise Angles (deg)', np.array2string(angles, precision=2)])
+
     # Convert rows to DataFrame
     df = pd.DataFrame(rows, columns=['Parameter', 'Value'])
-
-    # Save to CSV
     df.to_csv(file_path, index=False)
     print(f"Optimization results saved to {file_path}")
 
+
 base_path = '/home/sheida/Downloads/Research/Camera Placement/Results'  # Base directory for saving the file
-save_optimization_results(base_path, voxel_size, num_cameras, W1, W2, W3, iteration, num_particles, options, optimal_camera_poses, total_voxels, camera_coverage_counts, coverage_percentages, num_voxels_covered)
+save_optimization_results(base_path, voxel_size, num_cameras, W1, W2, W3, iteration, num_particles,
+                            options, optimal_camera_poses, total_voxels, camera_coverage_counts,
+                            coverage_percentages, num_voxels_covered, avg_distance_diff, avg_angle)
 

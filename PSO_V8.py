@@ -53,8 +53,8 @@ num_cameras = 4
 
 # Cost Function Coefficients
 W1 = 1   # Coefficient of Coevarge
-W2 = 0   # Coefficient of Resolution (Scale)
-W3 = 0   # Coefficient of Viewpoints Variety
+W2 = 1   # Coefficient of Resolution (Scale)
+W3 = 1   # Coefficient of Viewpoints Variety
 
 
 # Function to check if a point is within the room but outside the box

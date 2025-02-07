@@ -10,7 +10,7 @@ import pyswarms as ps
 from scipy.special import comb
 
 # --------------------------
-# User-Defined Parameters
+# User-Defined Hyper-Parameters
 # --------------------------
 # Room and target box dimensions
 room_size = {'width': 5.181, 'length': 5.308, 'height': 2.700}
@@ -33,12 +33,12 @@ camera_fov = {'horizontal': 40, 'vertical': 60}
 max_depth = 4       # Maximum FOV depth
 voxel_size = 0.2    # Voxel resolution for target space
 num_params_per_camera = 6  # [x, y, z, pitch, yaw, roll]
-num_cameras = 4
+num_cameras = 3
 
 # Objective function weights (here only coverage is used, but could be modified)
-W1 = 1   # Weight for coverage
-W2 = 1   # Weight for scale differences (unused)
-W3 = 1   # Weight for viewpoint diversity (unused)
+W1 = 0.33   # Weight for coverage
+W2 = 0.33   # Weight for scale differences (unused)
+W3 = 0.33   # Weight for viewpoint diversity (unused)
 
 # --------------------------
 # Geometry & Search Space Helpers
@@ -393,7 +393,7 @@ def visualize_cameras_and_fov(cameras_solution):
 # --------------------------
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Using device:', device)
-np.random.seed(678)
+np.random.seed(71118)
 maxiter = 500
 num_particles = 50
 iteration = 100
@@ -421,7 +421,7 @@ init_pos = create_initial_positions(num_cameras, num_particles, min_bounds, max_
 init_pos_np = init_pos
 
 # PSO options (tune as needed)
-options = {'c1': 1, 'c2': 1.6, 'w': 0.7}
+options = {'c1': 0.7, 'c2': 1.2, 'w': 0.7}
 
 optimizer = ps.single.GlobalBestPSO(n_particles=num_particles,
                                     dimensions=dimensions,
@@ -458,6 +458,19 @@ print('Coverage Percentages:', coverage_percentages)
 print('Total Voxels Covered:', num_voxels_covered)
 print('Average Pairwise Distance Difference:', avg_distance_diff)
 print('Average Pairwise Angle (deg):', avg_angle)
+
+
+### Plot the cost history
+
+cost_history = optimizer.cost_history
+
+plt.figure(figsize=(8, 6))
+plt.plot(np.arange(len(cost_history)), -np.array(cost_history), marker='o', linestyle='-')
+plt.xlabel('Iteration')
+plt.ylabel('Fitness Value (-cost)')
+plt.title('PSO Cost History')
+plt.grid(True)
+plt.show()
 
 # --------------------------
 # Save Optimization Results

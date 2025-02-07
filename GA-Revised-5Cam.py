@@ -23,18 +23,14 @@ box_center = {
     'z': box_position['z'] + box_size['height'] / 2
 } 
 camera_fov = {'horizontal': 40, 'vertical': 60}
-
-##Can later have different FOV angles for different cameras if needed
-# camera_fov = {'horizontal': 45, 'vertical': 20}
+h_fov = 40
+v_fov = 60
 
 max_depth = 4
 voxel_size = 0.2
 
 # In this stage we define the number of cameras, later this can be one objective parameter to be found by the optimization algorithm
 num_cameras= 2
-
-h_fov = 59
-v_fov = 39
 
 # Function to check if a point is within the room but outside the box
 def is_valid_position(x, y, z, room_dim = room_size, box_cord = box_position, box_dim = box_size):
@@ -63,10 +59,6 @@ def is_valid_position(x, y, z, room_dim = room_size, box_cord = box_position, bo
     # The position is valid if it's within the 2D search space and the specified height range
     # return is_in_2d_space and is_in_height_range
 
-
-# The rotations assume that the camera's position and the FOV pyramid's corners are 
-# in a right-handed coordinate system, and the rotation matrices are constructed accordingly. 
-# For the context of this problem we do not need the roll, thus to avoid mistakes in the order of the rotations, roll was removed. 
 
 def calculate_fov_pyramid(camera_pos, h_fov, v_fov, max_depth, pitch, yaw, roll):
     half_h_fov = math.radians(h_fov / 2)
@@ -112,25 +104,12 @@ def calculate_fov_pyramid(camera_pos, h_fov, v_fov, max_depth, pitch, yaw, roll)
     
     return rotated_corners
 
-# #Total number of voxels inside the box
-# def count_voxels_in_box(box_size, voxel_size):
-#     voxels_x = int(box_size['width'] / voxel_size)
-#     voxels_y = int(box_size['length'] / voxel_size)
-#     voxels_z = int(box_size['height'] / voxel_size)
-
-#     total_voxels = voxels_x * voxels_y * voxels_z
-#     return total_voxels
 
 
 def voxel_positions(box_size, voxel_size):
     # Generate voxel positions within the box
     voxels = []
-    # for x in range(0, box_size['width'], voxel_size):
-    #     for y in range(0, box_size['length'], voxel_size):
-    #         for z in range(0, box_size['height'], voxel_size):
-    #             center_x = x + voxel_size / 2
-    #             center_y = y + voxel_size / 2
-    #             center_z = z + voxel_size / 2
+
     for x in np.arange(box_position['x'], box_position['x'] + box_size['width'], voxel_size):
         for y in np.arange(box_position['y'], box_position['y'] + box_size['length'], voxel_size):
             for z in np.arange(box_position['z'], box_position['z'] + box_size['height'], voxel_size):
@@ -140,82 +119,10 @@ def voxel_positions(box_size, voxel_size):
                 voxels.append([center_x, center_y, center_z])
     return voxels
 
-
-def Is_inside_pyramid_original(voxel, camera_pos, h_fov, v_fov, max_depth, pitch, yaw, roll):
-    # Calculate the floor corners of the FOV pyramid
-    floor_corners = calculate_fov_pyramid(camera_pos, h_fov, v_fov, max_depth, pitch, yaw, roll)
-
-    # Initialize sum_corners as a numpy array of zeros
-    sum_corners = np.array([0.0, 0.0, 0.0])
-    
-    # Sum up the coordinates of the floor corners
-    for corner in floor_corners:
-        sum_corners += np.array(corner)
-
-    # Calculate the center of the floor corners
-    center_floor = sum_corners / len(floor_corners)
-
-    # Camera position should be a numpy array for consistent operations
-    camera_pos_array = np.array(camera_pos)
-
-    # Calculating the optical line vector using two points (camera_pos and center_floor)
-    optical_line_vector = center_floor - camera_pos_array
-
-    # Point of interest
-    point = np.array(voxel)
-
-    # Calculating the vector from camera position to the point
-    point_vector = point - camera_pos_array
-
-    # Ensure optical_line_vector is normalized for accurate projection calculation
-    optical_line_vector_normalized = optical_line_vector / np.linalg.norm(optical_line_vector)
-
-    # Calculate the projection length accurately
-    projection_length = np.dot(point_vector, optical_line_vector_normalized)
-
-    if projection_length < 0 or projection_length > max_depth:
-        return False
-
-    # Use the normalized optical line vector for calculating the closest point
-    closest_point_on_line = camera_pos_array + projection_length * optical_line_vector_normalized
-
-    # Calculate the distance between the given point and the closest point on the line (which is perpendicular)
-    distance_2_optical_line = np.linalg.norm(point - closest_point_on_line)
-  
-    # Distance between the camera and the point
-    distance_2_camera = np.linalg.norm(point_vector)
-
-    # camera distance to the plane containing the point (new_depth for obtaining 4 corners)
-    dist_to_plane = np.sqrt(distance_2_camera**2 - distance_2_optical_line**2)
-
-    point_plane_corners = calculate_fov_pyramid(camera_pos, h_fov, v_fov, dist_to_plane, pitch, yaw, roll)
-
-    numpy_corners = [np.array(corner) for corner in point_plane_corners]
-
-    # Calculate the normal of the plane using the cross product of two edges of the rectangle
-    edge1 = numpy_corners[1] - numpy_corners[0]
-    edge2 = numpy_corners[2] - numpy_corners[1]
-    plane_normal = np.cross(edge1, edge2)
-
-    def is_on_right_side(test_point, corner1, corner2, normal):
-        edge = corner2 - corner1
-        point_vector = test_point - corner1
-        cross_product = np.cross(edge, point_vector)
-        # Checking if the cross product is in the same direction as the plane normal
-        return np.dot(cross_product, normal) >= 0
-
-    inside = True
-    for i in range(len(numpy_corners)):
-        next_index = (i + 1) % len(numpy_corners)  # Ensure loop back to the first corner
-        if not is_on_right_side(point, numpy_corners[i], numpy_corners[next_index], plane_normal):
-            inside = False
-            break
-
-    return inside
-    
+ 
 def Is_inside_pyramid(voxel, camera_pos, h_fov, v_fov, max_depth, pitch, yaw, roll):
     # Calculate the floor corners of the FOV pyramid
-    floor_corners = calculate_fov_pyramid(camera_pos, h_fov, v_fov, max_depth, pitch, yaw, roll)  # ✅ Fix: Added `roll`
+    floor_corners = calculate_fov_pyramid(camera_pos, h_fov, v_fov, max_depth, pitch, yaw, roll)  
 
     # Initialize sum_corners as a numpy array of zeros
     sum_corners = np.array([0.0, 0.0, 0.0])
@@ -261,7 +168,7 @@ def Is_inside_pyramid(voxel, camera_pos, h_fov, v_fov, max_depth, pitch, yaw, ro
     dist_to_plane = np.sqrt(distance_2_camera**2 - distance_2_optical_line**2)
 
     # 🛠️ **Fix: Add `roll` in function call**
-    point_plane_corners = calculate_fov_pyramid(camera_pos, h_fov, v_fov, dist_to_plane, pitch, yaw, roll)  # ✅ Fixed
+    point_plane_corners = calculate_fov_pyramid(camera_pos, h_fov, v_fov, dist_to_plane, pitch, yaw, roll) 
 
     numpy_corners = [np.array(corner) for corner in point_plane_corners]
 
@@ -285,97 +192,10 @@ def Is_inside_pyramid(voxel, camera_pos, h_fov, v_fov, max_depth, pitch, yaw, ro
             break
 
     return inside
-
-
-def camera_voxel_matrix(camera_poses, pitches, yaws, rolls, points):
-    camera_voxel_matrix = np.zeros((len(camera_poses), len(points)))
-    # print('camera_voxel_matrix:',camera_voxel_matrix)
-    for i, camera_pos in enumerate(camera_poses):
-        for j, point in enumerate(points):
-            camera_voxel_matrix[i, j] = Is_inside_pyramid(
-    point, camera_pos, 
-    camera_fov['horizontal'], camera_fov['vertical'], max_depth, 
-    pitches[i], yaws[i], rolls[i] if i < len(rolls) else 0 
-)
-    return camera_voxel_matrix
 
 
 global voxel_coord
 voxel_coord = voxel_positions(box_size, voxel_size)
-
-
-def Is_inside_pyramid(voxel, camera_pos, h_fov, v_fov, max_depth, pitch, yaw, roll):
-    # Calculate the floor corners of the FOV pyramid
-    floor_corners = calculate_fov_pyramid(camera_pos, h_fov, v_fov, max_depth, pitch, yaw, roll=0)
-
-    # Initialize sum_corners as a numpy array of zeros
-    sum_corners = np.array([0.0, 0.0, 0.0])
-    
-    # Sum up the coordinates of the floor corners
-    for corner in floor_corners:
-        sum_corners += np.array(corner)
-
-    # Calculate the center of the floor corners
-    center_floor = sum_corners / len(floor_corners)
-
-    # Camera position should be a numpy array for consistent operations
-    camera_pos_array = np.array(camera_pos)
-
-    # Calculating the optical line vector using two points (camera_pos and center_floor)
-    optical_line_vector = center_floor - camera_pos_array
-
-    # Point of interest
-    point = np.array(voxel)
-
-    # Calculating the vector from camera position to the point
-    point_vector = point - camera_pos_array
-
-    # Ensure optical_line_vector is normalized for accurate projection calculation
-    optical_line_vector_normalized = optical_line_vector / np.linalg.norm(optical_line_vector)
-
-    # Calculate the projection length accurately
-    projection_length = np.dot(point_vector, optical_line_vector_normalized)
-
-    if projection_length < 0 or projection_length > max_depth:
-        return False
-
-    # Use the normalized optical line vector for calculating the closest point
-    closest_point_on_line = camera_pos_array + projection_length * optical_line_vector_normalized
-
-    # Calculate the distance between the given point and the closest point on the line (which is perpendicular)
-    distance_2_optical_line = np.linalg.norm(point - closest_point_on_line)
-  
-    # Distance between the camera and the point
-    distance_2_camera = np.linalg.norm(point_vector)
-
-    # camera distance to the plane containing the point (new_depth for obtaining 4 corners)
-    dist_to_plane = np.sqrt(distance_2_camera**2 - distance_2_optical_line**2)
-
-    point_plane_corners = calculate_fov_pyramid(camera_pos, h_fov, v_fov, dist_to_plane, pitch, yaw, roll)
-
-    numpy_corners = [np.array(corner) for corner in point_plane_corners]
-
-    # Calculate the normal of the plane using the cross product of two edges of the rectangle
-    edge1 = numpy_corners[1] - numpy_corners[0]
-    edge2 = numpy_corners[2] - numpy_corners[1]
-    plane_normal = np.cross(edge1, edge2)
-
-    def is_on_right_side(test_point, corner1, corner2, normal):
-        edge = corner2 - corner1
-        point_vector = test_point - corner1
-        cross_product = np.cross(edge, point_vector)
-        # Checking if the cross product is in the same direction as the plane normal
-        return np.dot(cross_product, normal) >= 0
-
-    inside = True
-    for i in range(len(numpy_corners)):
-        next_index = (i + 1) % len(numpy_corners)  # Ensure loop back to the first corner
-        if not is_on_right_side(point, numpy_corners[i], numpy_corners[next_index], plane_normal):
-            inside = False
-            break
-
-    return inside
-    
 
 
 def camera_voxel_matrix(camera_poses, pitches, yaws, rolls, points):
@@ -514,8 +334,6 @@ def create_initial_positions(num_cameras, num_particles, min_bounds, max_bounds)
     return init_pos
 
 
-
-
 def standardize_camera_solution(solution):
     standardized_solution = []
     for camera in solution:
@@ -638,18 +456,6 @@ def select_parents(population, fitness_fn, num_parents):
     parents = sorted_population[:num_parents]
     return parents
 
-#Crossover
-def crossover_original(parents, offspring_size):
-    offspring = []
-    for i in range(offspring_size):
-        # Select two parents
-        parent1 = parents[i % len(parents)]
-        parent2 = parents[(i + 1) % len(parents)]
-        # Randomly select a crossover point
-        crossover_point = np.random.randint(1, len(parent1))
-        # Create a new offspring by joining the parents at the crossover point
-        offspring.append(parent1[:crossover_point] + parent2[crossover_point:])
-    return offspring
 
 
 def crossover(parents, offspring_size):
@@ -671,43 +477,66 @@ def crossover(parents, offspring_size):
 
     return offspring
 
-#Mutation
-def mutate_original(offspring_crossover, mutation_rate):
-    for i in range(len(offspring_crossover)):
-        # Randomly select a mutation point
-        # mutation_point = np.random.randint(0, len(offspring_crossover[i]))
-        # # Randomly select a mutation value
-        # mutation_value = np.random.uniform(-1.0, 1.0, 1)
-        # # Apply the mutation
-        # offspring_crossover[i][mutation_point] = offspring_crossover[i][mutation_point] + mutation_value
+def crossover_with_probability(parents, offspring_size, crossover_probability):
+    offspring = []
+    for i in range(offspring_size):
+        # With probability crossover_probability perform crossover,
+        # otherwise randomly choose one parent.
+        if random.random() < crossover_probability:
+            parent1 = parents[i % len(parents)]
+            parent2 = parents[(i + 1) % len(parents)]
+            crossover_point = np.random.randint(1, len(parent1))
+            offspring_part1 = list(parent1[:crossover_point])
+            offspring_part2 = list(parent2[crossover_point:])
+            offspring.append(offspring_part1 + offspring_part2)
+        else:
+            # Simply copy one parent (or select randomly)
+            offspring.append(random.choice(parents))
+    return offspring
 
-        mutation_value = np.random.uniform(-1.0, 1.0, 1).item()  # Ensure scalar value
-        mutation_point = np.random.randint(0, len(offspring_crossover[i]))  # Safe mutation index
-        offspring_crossover[i][mutation_point] += mutation_value
 
-    return offspring_crossover
+# def mutate(offspring_crossover, mutation_rate):
+#     for i in range(len(offspring_crossover)):
+#         # Convert the tuple to a list before mutating
+#         offspring_list = list(offspring_crossover[i])  
 
+#         # Ensure the mutation index is within bounds
+#         mutation_point = np.random.randint(0, len(offspring_list))
+
+#         # Mutation value
+#         mutation_value = np.random.uniform(-1.0, 1.0, 1).item()  # Ensure a scalar float
+
+#         # Convert the target tuple to a list, mutate, then convert it back
+#         mutated_camera = list(offspring_list[mutation_point])
+#         mutated_camera[np.random.randint(0, len(mutated_camera))] += mutation_value  
+#         offspring_list[mutation_point] = tuple(mutated_camera)
+
+#         # Convert the list back to a tuple before reassigning
+#         offspring_crossover[i] = tuple(offspring_list)
+
+#     return offspring_crossover
 
 def mutate(offspring_crossover, mutation_rate):
-    for i in range(len(offspring_crossover)):
-        # Convert the tuple to a list before mutating
-        offspring_list = list(offspring_crossover[i])  
-
-        # Ensure the mutation index is within bounds
-        mutation_point = np.random.randint(0, len(offspring_list))
-
-        # Mutation value
-        mutation_value = np.random.uniform(-1.0, 1.0, 1).item()  # Ensure a scalar float
-
-        # Convert the target tuple to a list, mutate, then convert it back
-        mutated_camera = list(offspring_list[mutation_point])
-        mutated_camera[np.random.randint(0, len(mutated_camera))] += mutation_value  
-        offspring_list[mutation_point] = tuple(mutated_camera)
-
-        # Convert the list back to a tuple before reassigning
-        offspring_crossover[i] = tuple(offspring_list)
-
-    return offspring_crossover
+    # offspring_crossover is a list of chromosomes (each is a tuple of camera configurations)
+    mutated_offspring = []
+    for chromosome in offspring_crossover:
+        # Convert the chromosome (tuple of cameras) to a list so we can modify it
+        chromosome_list = list(chromosome)
+        # Loop over each camera configuration in the chromosome
+        new_chromosome = []
+        for camera in chromosome_list:
+            # Convert the camera tuple to a list to mutate individual parameters
+            camera_list = list(camera)
+            # Loop over each gene in the camera configuration
+            for gene_idx in range(len(camera_list)):
+                # With probability equal to mutation_rate, mutate this gene
+                if np.random.rand() < mutation_rate:
+                    mutation_value = np.random.uniform(-1.0, 1.0)
+                    camera_list[gene_idx] += mutation_value
+            # Convert back to tuple and add to new chromosome
+            new_chromosome.append(tuple(camera_list))
+        mutated_offspring.append(tuple(new_chromosome))
+    return mutated_offspring
 
 #Genetic algorithm
 def genetic_algorithm(population, fitness_fn, num_generations):
@@ -728,7 +557,8 @@ def genetic_algorithm(population, fitness_fn, num_generations):
         # Select the best parents
         parents = select_parents(population, fitness_fn, num_parents)
         # Create the next generation through crossover
-        offspring_crossover = crossover(parents, num_offspring)
+        # offspring_crossover = crossover(parents, num_offspring)
+        offspring_crossover = crossover_with_probability(parents, num_offspring, crossover_probability)
         # Apply mutation
         offspring_mutation = mutate(offspring_crossover, mutation_rate)
         # Add the parents and offspring to the new population
@@ -773,4 +603,4 @@ print('best_fitness:',best_fitness)
 standardized_best_solution = standardize_camera_solution(best_solution)
 # Now, visualize the standardized best solution
 # visualize_cameras_and_fov_pso(room_size, box_position, box_size, standardized_best_solution)
-best_solution, best_fitness, final_population = genetic_algorithm(pop_size, num_cameras, num_generations, mutation_rate = 0.1)
+best_solution, best_fitness, final_population = genetic_algorithm(pop_size, num_cameras, num_generations)

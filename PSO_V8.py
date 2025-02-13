@@ -48,13 +48,13 @@ camera_fov = {'horizontal': 40, 'vertical': 60}
 max_depth = 4  # Maximum depth of FOV  
 voxel_size = 0.2
 num_params_per_camera = 6
-num_cameras = 4
+num_cameras = 3
 
 
 # Cost Function Coefficients
-W1 = 1   # Coefficient of Coevarge
-W2 = 1   # Coefficient of Resolution (Scale)
-W3 = 1   # Coefficient of Viewpoints Variety
+W1 = 0.7    # Coefficient of Coevarge
+W2 = 0.15   # Coefficient of Resolution (Scale)
+W3 = 0.15   # Coefficient of Viewpoints Variety
 
 
 # Function to check if a point is within the room but outside the box
@@ -543,8 +543,8 @@ print('Using device:', device)
 # Define constants
 maxiter = 500
 num_particles = 50
-iteration = 10
-np.random.seed(2)
+iteration = 100
+np.random.seed(220)
 
 # Compute dimensions based on the number of cameras
 dimensions = 6 * num_cameras
@@ -564,7 +564,7 @@ init_pos = np.random.uniform(low=min_bounds_array, high=max_bounds_array, size=(
 init_pos_tensor = torch.tensor(init_pos, dtype=torch.float32, device=device)
 
 # PSO options
-options = {'c1': 0.8, 'c2': 1.2, 'w': 0.30}
+options = {'c1': 0.6856, 'c2': 0.8592, 'w': 0.539045}
 
 # Initialize the optimizer
 optimizer = ps.single.GlobalBestPSO(n_particles=num_particles,

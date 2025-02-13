@@ -33,12 +33,12 @@ camera_fov = {'horizontal': 40, 'vertical': 60}
 max_depth = 4       # Maximum FOV depth
 voxel_size = 0.2    # Voxel resolution for target space
 num_params_per_camera = 6  # [x, y, z, pitch, yaw, roll]
-num_cameras = 3
+num_cameras = 6
 
 # Objective function weights (here only coverage is used, but could be modified)
-W1 = 0.33   # Weight for coverage
-W2 = 0.33   # Weight for scale differences (unused)
-W3 = 0.33   # Weight for viewpoint diversity (unused)
+W1 = 1 # Weight for coverage
+W2 = 0   # Weight for scale differences 
+W3 = 0   # Weight for viewpoint diversity 
 
 # --------------------------
 # Geometry & Search Space Helpers
@@ -393,10 +393,10 @@ def visualize_cameras_and_fov(cameras_solution):
 # --------------------------
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Using device:', device)
-np.random.seed(71118)
+np.random.seed(18)
 maxiter = 500
 num_particles = 50
-iteration = 100
+iteration = 50
 # PSO dimensions: 6 parameters per camera
 dimensions = num_cameras * num_params_per_camera
 
@@ -419,9 +419,9 @@ init_pos = create_initial_positions(num_cameras, num_particles, min_bounds, max_
 
 # Convert initial positions to tensor if needed (PSO library expects NumPy)
 init_pos_np = init_pos
-
 # PSO options (tune as needed)
-options = {'c1': 0.7, 'c2': 1.2, 'w': 0.7}
+options = {'c1': 1.11548678,	'c2': 0.9242252	, 'w':  0.251787960 }
+
 
 optimizer = ps.single.GlobalBestPSO(n_particles=num_particles,
                                     dimensions=dimensions,
@@ -471,6 +471,7 @@ plt.ylabel('Fitness Value (-cost)')
 plt.title('PSO Cost History')
 plt.grid(True)
 plt.show()
+
 
 # --------------------------
 # Save Optimization Results

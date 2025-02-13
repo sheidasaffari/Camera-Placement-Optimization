@@ -3,10 +3,15 @@
 ## Overview
 
 This project implements an optimization framework for camera placement in a laboratory setting. Our goal is to maximize coverage of a target space (voxelized 3D environment), diversify viewpoints, and achieve varied scale images. The optimization problem is approached as a multiobjective task, and we use both Particle Swarm Optimization (PSO) and Genetic Algorithms (GA) to explore a continuous search space for the best camera configurations.
+![2 (1)](https://github.com/user-attachments/assets/9f40c36e-77d9-433f-bfab-16071578044d)
+
+
+
+
 
 ## Project Description
 
-The core idea behind the project is to position cameras in a room (while avoiding a designated target box) so that the data collection process achieves:
+The core idea behind the project is to position cameras in a room (while avoiding a designated target space) so that the data collection process achieves:
 - **High Coverage:** Maximizing the number of voxels (small cubic cells) in the target space that are captured.
 - **Viewpoint Diversity:** Maximizing the angular separation between cameras.
 - **Scale Variability:** Maximizing the differences in camera-to-voxel distances across camera pairs.
